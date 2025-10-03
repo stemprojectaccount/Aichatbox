@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8" />
@@ -17,6 +18,7 @@
     background: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(5px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    flex-shrink: 0;
   }
   .header h1 {
     margin: 0;
@@ -29,8 +31,13 @@
     font-size: 14px;
   }
   #chatbox{
-    flex:1;overflow-y:auto;padding:20px;
-    display:flex;flex-direction:column;gap:12px;
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0; /* Quan trọng: cho phép flex item co lại đúng cách */
   }
   .msg{
     padding:12px 16px;border-radius:20px;max-width:75%;
@@ -49,6 +56,7 @@
     align-items:center;
     gap:8px;
     border-top: 1px solid #ddd;
+    flex-shrink: 0; /* Ngăn input area co lại */
   }
   #userInput{
     flex:1;padding:12px 16px;
@@ -198,6 +206,7 @@
     font-size: 12px;
     color: rgba(255, 255, 255, 0.8);
     background: rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
   }
   
   /* Responsive */
