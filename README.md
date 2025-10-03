@@ -509,7 +509,7 @@ vietnameseRadio.addEventListener('change', () => {
     selectedLanguage = 'vi';
     populateVoiceList();
   }
-});
+}); 
 
 englishRadio.addEventListener('change', () => {
   if (englishRadio.checked) {
