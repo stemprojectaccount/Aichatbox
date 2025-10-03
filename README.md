@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8" />
@@ -31,13 +30,13 @@
     font-size: 14px;
   }
   #chatbox{
-    flex: 1;
+    flex: 10;
     overflow-y: auto;
     padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    min-height: 0; /* Quan trọng: cho phép flex item co lại đúng cách */
+    min-height: 10; /* Quan trọng: cho phép flex item co lại đúng cách */
   }
   .msg{
     padding:12px 16px;border-radius:20px;max-width:75%;
