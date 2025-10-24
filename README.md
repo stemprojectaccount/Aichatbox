@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8" />
@@ -29,15 +30,53 @@
     color: #f0f0f0;
     font-size: 14px;
   }
+  
+  /* Chat container with resize handle */
+  .chat-container {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    margin: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+  }
+  
+  .resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nw-resize;
+    background: transparent;
+    z-index: 10;
+  }
+  
+  .resize-handle::after {
+    content: '';
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid #5563DE;
+    border-bottom: 2px solid #5563DE;
+  }
+  
   #chatbox{
-    flex: 10;
+    flex: 1;
     overflow-y: auto;
     padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    min-height: 10; /* Quan trọng: cho phép flex item co lại đúng cách */
+    min-height: 0;
   }
+  
   .msg{
     padding:12px 16px;border-radius:20px;max-width:75%;
     word-wrap:break-word;white-space:pre-wrap;
@@ -55,7 +94,7 @@
     align-items:center;
     gap:8px;
     border-top: 1px solid #ddd;
-    flex-shrink: 0; /* Ngăn input area co lại */
+    flex-shrink: 0;
   }
   #userInput{
     flex:1;padding:12px 16px;
@@ -226,6 +265,9 @@
       right: 5%;
       left: 5%;
     }
+    .resize-handle {
+      display: none;
+    }
   }
 </style>
 </head>
@@ -236,7 +278,11 @@
   <p>Ứng dụng trò chuyện với trí tuệ nhân tạo và hỗ trợ giọng nói tiếng Việt</p>
 </div>
 
-<div id="chatbox"></div>
+<!-- Chat container với khả năng resize -->
+<div class="chat-container" id="chatContainer">
+  <div id="chatbox"></div>
+  <div class="resize-handle" id="resizeHandle"></div>
+</div>
 
 <div id="inputArea">
   <input type="text" id="userInput" placeholder="Nhập câu hỏi của bạn hoặc nhấn nút mic..."/>
@@ -293,8 +339,8 @@
 </div>
 
 <script>
-const API_KEY = "AIzaSyDzvHqoNxtXDbFHS2SOSXzcGbc2evbAZr0"; // Thay bằng API key Gemini
-const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+// SỬ DỤNG PROXY URL CỦA BẠN
+const PROXY_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLgPZOvQ1vRkTAaHOw80RAJeuzpmvjME2wkyMQgJirQ8d1KkR6Zb3Vo55QJ-4E28cXKTJBPjQv343kgI6w3nQVlTREipiDW4NjV5hkn410JPcnfitaGBrO8GysiBmNXyIyKSMGIXdVSKJe59qKkN6i6Y3fq-kYYESZsR3PzWacQwCkK49GLKp0K1XyzVqp11T2qApoipH5B8jMhj-hiCT70p_eV5pH5D8k_cYg4KrzyF9IOncWd6PKgxp7Dt-arbmR0oX0zUd6Xjv20rDQiLORJryeK4hKT9Un2kC7Kk&lib=MWfGmL94Hok3DzeZ6HWgxcj4wlOc1E_us";
 
 const chatbox = document.getElementById('chatbox');
 const input = document.getElementById('userInput');
@@ -315,39 +361,79 @@ const rateValue = document.getElementById('rateValue');
 const pitchValue = document.getElementById('pitchValue');
 const vietnameseRadio = document.getElementById('vietnamese');
 const englishRadio = document.getElementById('english');
+const chatContainer = document.getElementById('chatContainer');
+const resizeHandle = document.getElementById('resizeHandle');
 
 let ttsEnabled = true;
-let recognition; // SpeechRecognition instance
+let recognition;
 let voices = [];
 let currentUtterance = null;
 let selectedLanguage = 'vi';
 
+// -------- Resize Functionality --------
+let isResizing = false;
+let startX, startY, startWidth, startHeight;
+
+resizeHandle.addEventListener('mousedown', initResize);
+
+function initResize(e) {
+  isResizing = true;
+  startX = e.clientX;
+  startY = e.clientY;
+  startWidth = parseInt(document.defaultView.getComputedStyle(chatContainer).width, 10);
+  startHeight = parseInt(document.defaultView.getComputedStyle(chatContainer).height, 10);
+  
+  document.addEventListener('mousemove', resize);
+  document.addEventListener('mouseup', stopResize);
+  
+  e.preventDefault();
+}
+
+function resize(e) {
+  if (!isResizing) return;
+  
+  const width = startWidth + (e.clientX - startX);
+  const height = startHeight + (e.clientY - startY);
+  
+  const minWidth = 300;
+  const minHeight = 200;
+  
+  if (width >= minWidth) {
+    chatContainer.style.width = width + 'px';
+  }
+  
+  if (height >= minHeight) {
+    chatContainer.style.height = height + 'px';
+  }
+}
+
+function stopResize() {
+  isResizing = false;
+  document.removeEventListener('mousemove', resize);
+  document.removeEventListener('mouseup', stopResize);
+}
+
 // Khởi tạo TTS
 function initTTS() {
-  // Chờ voices được tải
   speechSynthesis.onvoiceschanged = function() {
     voices = speechSynthesis.getVoices();
     populateVoiceList();
     
-    // Tìm giọng tiếng Việt nếu có
     const vietnameseVoice = voices.find(voice => voice.lang.includes('vi'));
     if (vietnameseVoice) {
       voiceSelect.value = vietnameseVoice.voiceURI;
     }
   };
   
-  // Tải voices ngay lập tức (nếu đã có sẵn)
   voices = speechSynthesis.getVoices();
   if (voices.length > 0) {
     populateVoiceList();
   }
 }
 
-// Điền danh sách giọng nói vào dropdown
 function populateVoiceList() {
   voiceSelect.innerHTML = '';
   
-  // Lọc giọng nói theo ngôn ngữ đã chọn
   const filteredVoices = voices.filter(voice => {
     return selectedLanguage === 'vi' ? voice.lang.includes('vi') : voice.lang.includes('en');
   });
@@ -368,11 +454,9 @@ function populateVoiceList() {
   }
 }
 
-// Nói văn bản với cài đặt hiện tại
 function speak(text) {
   if (!ttsEnabled || !window.speechSynthesis) return;
   
-  // Dừng phát hiện tại nếu có
   if (currentUtterance) {
     speechSynthesis.cancel();
   }
@@ -395,7 +479,6 @@ function speak(text) {
   speechSynthesis.speak(currentUtterance);
 }
 
-// Dừng phát âm thanh
 function stopSpeaking() {
   if (window.speechSynthesis && currentUtterance) {
     speechSynthesis.cancel();
@@ -407,7 +490,6 @@ function addMessage(text, cls, imgSrc){
   const div = document.createElement('div');
   div.className = `msg ${cls}`;
   
-  // Xử lý tin nhắn đang gõ
   if (text === 'Đang gõ...') {
     const typingIndicator = document.createElement('div');
     typingIndicator.className = 'typing-indicator';
@@ -445,16 +527,22 @@ async function sendMessage(base64Img){
   }
 
   try {
-    const res = await fetch(`${ENDPOINT}?key=${API_KEY}`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
+    const res = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ contents })
     });
+    
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    
     const data = await res.json();
     const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Không nhận được phản hồi';
     typing.textContent = reply;
     speak(reply);
   } catch(err){
+    console.error('Lỗi:', err);
     typing.textContent = 'Lỗi kết nối: ' + err.message;
   }
 }
@@ -518,7 +606,7 @@ englishRadio.addEventListener('change', () => {
   }
 });
 
-// -------- Voice Recognition --------
+// Voice Recognition
 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SR();
@@ -564,11 +652,10 @@ micBtn.addEventListener('click', () => {
   }
 });
 
-// Khởi tạo TTS khi trang tải xong
+// Khởi tạo khi trang tải xong
 window.addEventListener('DOMContentLoaded', function() {
   initTTS();
   
-  // Thêm tin nhắn chào mừng
   setTimeout(() => {
     const welcomeMsg = "Xin chào! Tôi là trợ lý ảo Gemini. Tôi có thể giúp gì cho bạn?";
     addMessage(welcomeMsg, 'bot');
