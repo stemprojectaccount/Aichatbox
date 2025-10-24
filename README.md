@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Trò chuyện với Gemini - TTS Tiếng Việt</title>
+<title>Trò chuyện với AI tin học </title>
 <style>
   *{box-sizing:border-box;}
   body{
@@ -37,7 +37,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 0;
+    min-height: 0; /* Quan trọng: cho phép flex item co lại đúng cách */
     margin: 10px;
     background: rgba(255, 255, 255, 0.9);
     border-radius: 12px;
@@ -94,7 +94,7 @@
     align-items:center;
     gap:8px;
     border-top: 1px solid #ddd;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Ngăn input area co lại */
   }
   #userInput{
     flex:1;padding:12px 16px;
@@ -266,7 +266,7 @@
       left: 5%;
     }
     .resize-handle {
-      display: none;
+      display: none; /* Ẩn resize handle trên mobile */
     }
   }
 </style>
@@ -274,8 +274,8 @@
 <body>
 
 <div class="header">
-  <h1>Trò chuyện với Gemini</h1>
-  <p>Ứng dụng trò chuyện với trí tuệ nhân tạo và hỗ trợ giọng nói tiếng Việt</p>
+  <h1>Trò chuyện với Ai tin học </h1>
+  <p>Ứng dụng Ai tin học - hỗ trợ học tập hiệu quả </p>
 </div>
 
 <!-- Chat container với khả năng resize -->
@@ -300,14 +300,10 @@
   </div>
   
   <div class="language-section">
-    <h4>Lựa chọn ngôn ngữ</h4>
-    <div class="language-option">
-      <input type="radio" id="vietnamese" name="language" value="vi" checked>
-      <label for="vietnamese">Tiếng Việt</label>
-    </div>
+    <h4>Lựa chọn giọng đọc </h4>
     <div class="language-option">
       <input type="radio" id="english" name="language" value="en">
-      <label for="english">Tiếng Anh</label>
+      <label for="english">các giọng đọc </label>
     </div>
   </div>
   
@@ -335,12 +331,12 @@
 </div>
 
 <div class="footer">
-  <p>Ứng dụng trò chuyện với AI Gemini - Hỗ trợ tiếng Việt</p>
+  <p>Ứng dụng trò chuyện với AI tin học - hỗ trợ học tập </p>
 </div>
 
 <script>
-// SỬ DỤNG PROXY URL CỦA BẠN
-const PROXY_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLgPZOvQ1vRkTAaHOw80RAJeuzpmvjME2wkyMQgJirQ8d1KkR6Zb3Vo55QJ-4E28cXKTJBPjQv343kgI6w3nQVlTREipiDW4NjV5hkn410JPcnfitaGBrO8GysiBmNXyIyKSMGIXdVSKJe59qKkN6i6Y3fq-kYYESZsR3PzWacQwCkK49GLKp0K1XyzVqp11T2qApoipH5B8jMhj-hiCT70p_eV5pH5D8k_cYg4KrzyF9IOncWd6PKgxp7Dt-arbmR0oX0zUd6Xjv20rDQiLORJryeK4hKT9Un2kC7Kk&lib=MWfGmL94Hok3DzeZ6HWgxcj4wlOc1E_us";
+const API_KEY = "AIzaSyDzvHqoNxtXDbFHS2SOSXzcGbc2evbAZr0"; // Thay bằng API key Gemini
+const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 const chatbox = document.getElementById('chatbox');
 const input = document.getElementById('userInput');
@@ -365,7 +361,7 @@ const chatContainer = document.getElementById('chatContainer');
 const resizeHandle = document.getElementById('resizeHandle');
 
 let ttsEnabled = true;
-let recognition;
+let recognition; // SpeechRecognition instance
 let voices = [];
 let currentUtterance = null;
 let selectedLanguage = 'vi';
@@ -395,6 +391,7 @@ function resize(e) {
   const width = startWidth + (e.clientX - startX);
   const height = startHeight + (e.clientY - startY);
   
+  // Giới hạn kích thước tối thiểu
   const minWidth = 300;
   const minHeight = 200;
   
@@ -415,25 +412,30 @@ function stopResize() {
 
 // Khởi tạo TTS
 function initTTS() {
+  // Chờ voices được tải
   speechSynthesis.onvoiceschanged = function() {
     voices = speechSynthesis.getVoices();
     populateVoiceList();
     
+    // Tìm giọng tiếng Việt nếu có
     const vietnameseVoice = voices.find(voice => voice.lang.includes('vi'));
     if (vietnameseVoice) {
       voiceSelect.value = vietnameseVoice.voiceURI;
     }
   };
   
+  // Tải voices ngay lập tức (nếu đã có sẵn)
   voices = speechSynthesis.getVoices();
   if (voices.length > 0) {
     populateVoiceList();
   }
 }
 
+// Điền danh sách giọng nói vào dropdown
 function populateVoiceList() {
   voiceSelect.innerHTML = '';
   
+  // Lọc giọng nói theo ngôn ngữ đã chọn
   const filteredVoices = voices.filter(voice => {
     return selectedLanguage === 'vi' ? voice.lang.includes('vi') : voice.lang.includes('en');
   });
@@ -454,9 +456,11 @@ function populateVoiceList() {
   }
 }
 
+// Nói văn bản với cài đặt hiện tại
 function speak(text) {
   if (!ttsEnabled || !window.speechSynthesis) return;
   
+  // Dừng phát hiện tại nếu có
   if (currentUtterance) {
     speechSynthesis.cancel();
   }
@@ -479,6 +483,7 @@ function speak(text) {
   speechSynthesis.speak(currentUtterance);
 }
 
+// Dừng phát âm thanh
 function stopSpeaking() {
   if (window.speechSynthesis && currentUtterance) {
     speechSynthesis.cancel();
@@ -490,6 +495,7 @@ function addMessage(text, cls, imgSrc){
   const div = document.createElement('div');
   div.className = `msg ${cls}`;
   
+  // Xử lý tin nhắn đang gõ
   if (text === 'Đang gõ...') {
     const typingIndicator = document.createElement('div');
     typingIndicator.className = 'typing-indicator';
@@ -527,22 +533,16 @@ async function sendMessage(base64Img){
   }
 
   try {
-    const res = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+    const res = await fetch(`${ENDPOINT}?key=${API_KEY}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ contents })
     });
-    
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    
     const data = await res.json();
     const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Không nhận được phản hồi';
     typing.textContent = reply;
     speak(reply);
   } catch(err){
-    console.error('Lỗi:', err);
     typing.textContent = 'Lỗi kết nối: ' + err.message;
   }
 }
@@ -606,7 +606,7 @@ englishRadio.addEventListener('change', () => {
   }
 });
 
-// Voice Recognition
+// -------- Voice Recognition --------
 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SR();
@@ -652,10 +652,11 @@ micBtn.addEventListener('click', () => {
   }
 });
 
-// Khởi tạo khi trang tải xong
+// Khởi tạo TTS khi trang tải xong
 window.addEventListener('DOMContentLoaded', function() {
   initTTS();
   
+  // Thêm tin nhắn chào mừng
   setTimeout(() => {
     const welcomeMsg = "Xin chào! Tôi là trợ lý ảo Gemini. Tôi có thể giúp gì cho bạn?";
     addMessage(welcomeMsg, 'bot');
