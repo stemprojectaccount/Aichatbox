@@ -987,6 +987,12 @@
                 currentUtterance = null;
                 stopBtn.style.display = 'none';
                 console.error('Lỗi phát âm thanh:', event.error);
+                
+                // Fallback: Show notification about TTS issue
+                if (event.error === 'not-allowed') {
+                    addMessage('Lỗi: Trình duyệt không cho phép sử dụng Text-to-Speech. Vui lòng kiểm tra cài đặt quyền micro.', 'bot');
+                }
+            };
             
             speechSynthesis.speak(currentUtterance);
         }
@@ -1064,8 +1070,10 @@
                 const randomResponse = responses[Math.floor(Math.random() * responses.length)];
                 typing.textContent = randomResponse;
                 
-                // Speak the reply
-                speak(randomResponse);
+                // Speak the reply only if TTS is enabled
+                if (ttsEnabled) {
+                    speak(randomResponse);
+                }
             }, 2000);
         }
 
@@ -1205,11 +1213,9 @@
         window.addEventListener('DOMContentLoaded', function() {
             initTTS();
             
-            // Add welcome message
+            // Add welcome message only (removed automatic speaking)
             setTimeout(() => {
-                const welcomeMsg = "Xin chào! Tôi là trợ lý AI Tin Học. Tôi có thể giúp gì cho bạn?";
-                addMessage(welcomeMsg, 'bot');
-                speak(welcomeMsg);
+                addMessage("Xin chào! Tôi là trợ lý AI Tin Học. Tôi có thể giúp gì cho bạn?", 'bot');
             }, 500);
         });
 
